@@ -6,8 +6,28 @@
 	objectVersion = 77;
 	objects = {
 
+
+/* Begin PBXContainerItemProxy section */
+		AC49CAB06EAA2DDEEABFBCDF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DC7C37672FA314C40027A029 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DC7C376E2FA314C40027A029;
+			remoteInfo = AgentRocky;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		EE514DA2EC0EDCD9273BAB63 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DC7C376E2FA314C40027A029 /* AgentRocky */;
+			targetProxy = AC49CAB06EAA2DDEEABFBCDF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXFileReference section */
 		DC7C376F2FA314C40027A029 /* AgentRocky.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AgentRocky.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F8C83156986EC0CA8A8752C3 /* AgentRockyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgentRockyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +36,22 @@
 			path = AgentRocky;
 			sourceTree = "<group>";
 		};
+		55FEAFFA71C3073F7A8E5301 /* AgentRockyTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AgentRockyTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		DC7C376C2FA314C40027A029 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		81917BFA8975CD97D19B5F79 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				DC7C37712FA314C40027A029 /* AgentRocky */,
+				55FEAFFA71C3073F7A8E5301 /* AgentRockyTests */,
 				DC7C37702FA314C40027A029 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				DC7C376F2FA314C40027A029 /* AgentRocky.app */,
+				F8C83156986EC0CA8A8752C3 /* AgentRockyTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +104,29 @@
 			productReference = DC7C376F2FA314C40027A029 /* AgentRocky.app */;
 			productType = "com.apple.product-type.application";
 		};
+		457728E5CF3B454632CD1763 /* AgentRockyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6ADBB8F50BBC79F17B4875B3 /* Build configuration list for PBXNativeTarget "AgentRockyTests" */;
+			buildPhases = (
+				40F6AB93B0593241AF9ED2A9 /* Sources */,
+				81917BFA8975CD97D19B5F79 /* Frameworks */,
+				0E8C8CE82DC827DE3F7EE768 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EE514DA2EC0EDCD9273BAB63 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				55FEAFFA71C3073F7A8E5301 /* AgentRockyTests */,
+			);
+			name = AgentRockyTests;
+			packageProductDependencies = (
+			);
+			productName = AgentRockyTests;
+			productReference = F8C83156986EC0CA8A8752C3 /* AgentRockyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +139,10 @@
 				TargetAttributes = {
 					DC7C376E2FA314C40027A029 = {
 						CreatedOnToolsVersion = 26.4.1;
+					};
+					457728E5CF3B454632CD1763 = {
+						CreatedOnToolsVersion = 26.4.1;
+						TestTargetID = DC7C376E2FA314C40027A029;
 					};
 				};
 			};
@@ -100,6 +161,7 @@
 			projectRoot = "";
 			targets = (
 				DC7C376E2FA314C40027A029 /* AgentRocky */,
+				457728E5CF3B454632CD1763 /* AgentRockyTests */,
 			);
 		};
 /* End PBXProject section */
@@ -112,10 +174,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0E8C8CE82DC827DE3F7EE768 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		DC7C376B2FA314C40027A029 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40F6AB93B0593241AF9ED2A9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -315,6 +391,44 @@
 			};
 			name = Release;
 		};
+		7EE6E8CE6E024527751F4001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = K45X6XQB2S;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhunhao.AgentRockyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AgentRocky.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AgentRocky";
+			};
+			name = Debug;
+		};
+		2780DF409A2004736C25C86A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = K45X6XQB2S;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zhunhao.AgentRockyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AgentRocky.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AgentRocky";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -332,6 +446,15 @@
 			buildConfigurations = (
 				DC7C377B2FA314C80027A029 /* Debug */,
 				DC7C377C2FA314C80027A029 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6ADBB8F50BBC79F17B4875B3 /* Build configuration list for PBXNativeTarget "AgentRockyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7EE6E8CE6E024527751F4001 /* Debug */,
+				2780DF409A2004736C25C86A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
