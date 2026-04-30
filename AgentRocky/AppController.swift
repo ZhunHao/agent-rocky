@@ -106,12 +106,17 @@ final class AppController {
 
     private(set) var activeProvider: AgentProvider = .claude
     private var currentSession: (any AgentSession)?
+    private var isSwitchingProvider: Bool = false
 
     private func installInitialSession() {
         Task { await switchProvider(to: .claude) }
     }
 
     func switchProvider(to provider: AgentProvider) async {
+        guard !isSwitchingProvider else { return }
+        isSwitchingProvider = true
+        defer { isSwitchingProvider = false }
+
         // Tear down current session, if any.
         await currentSession?.terminate()
 
