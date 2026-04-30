@@ -69,7 +69,7 @@ actor FoundationModelsAdapter: AgentSession {
 
         #if canImport(FoundationModels)
         guard let session else {
-            state = .ready
+            state = .failed("session missing")
             throw AgentError.sessionDied(reason: "session missing")
         }
 
@@ -90,6 +90,7 @@ actor FoundationModelsAdapter: AgentSession {
             for try await snapshot in stream {
                 guard !Task.isCancelled else {
                     state = .ready
+                    continuation.yield(.turnComplete)
                     return
                 }
                 let full = snapshot.content
@@ -142,10 +143,13 @@ actor FoundationModelsAdapter: AgentSession {
     /// /clear semantics for FM — recreate the inner LanguageModelSession.
     /// The outer adapter (and its events stream) stays alive.
     func resetContext() async {
+        currentTask?.cancel()
+        currentTask = nil
         #if canImport(FoundationModels)
         let s = LanguageModelSession(instructions: personaPrompt)
         s.prewarm()
         session = s
         #endif
+        state = .ready
     }
 }
