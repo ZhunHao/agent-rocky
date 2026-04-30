@@ -21,6 +21,8 @@ DerivedData/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
 *.xcuserstate
+# Stale phantom Xcode workspace from a previous flattening of nested project layout
+AgentRocky/AgentRocky.xcodeproj/
 *.xcuserstatedata
 xcuserdata/
 *.moved-aside
