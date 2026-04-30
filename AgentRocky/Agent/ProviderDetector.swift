@@ -31,7 +31,9 @@ actor ProviderDetector {
     }
 
     private func probeFoundationModels() async -> Bool {
-        // M4 will fill this in. For now, FoundationModels is unavailable.
+        if #available(macOS 26.0, *) {
+            return await FoundationModelsAdapter.isAvailable()
+        }
         return false
     }
 }

@@ -43,10 +43,11 @@ final class ChatViewModel {
         case .command(.clear):
             transcript = []
             inProgressAssistantID = nil
-            // Forward a real /clear to Claude so its conversation context resets too.
-            // The adapter sends it as a normal user message; Claude Code recognizes it.
-            if let session {
-                Task { try? await session.send("/clear") }
+            // Forward /clear to the active adapter so its conversation context resets too.
+            if let claude = session as? ClaudeCLIAdapter {
+                Task { try? await claude.send("/clear") }
+            } else if #available(macOS 26.0, *), let fm = session as? FoundationModelsAdapter {
+                Task { await fm.resetContext() }
             }
         case .command(.copy):
             if let last = transcript.last(where: { $0.role == .assistant }) {

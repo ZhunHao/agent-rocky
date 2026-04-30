@@ -35,7 +35,7 @@ final class AppController {
 
         installPopoverWiring()
         installMouseMonitor()
-        installRealSession()
+        installInitialSession()
         installOnboardingIfNeeded()
 
         tickDriver.start { [weak self] now in self?.tick(now: now) }
@@ -102,17 +102,41 @@ final class AppController {
         }
     }
 
-    private func installRealSession() {
-        Task { @MainActor in
-            do {
-                let persona = try PersonaPromptBuilder.load()
-                let adapter = ClaudeCLIAdapter(personaPrompt: persona)
-                self.popover.viewModel.attach(adapter)
-                try await adapter.start()
-            } catch {
-                self.popover.viewModel.appendSystem("Setup failed: \(error)")
+    // MARK: - Active provider / session
+
+    private(set) var activeProvider: AgentProvider = .claude
+    private var currentSession: (any AgentSession)?
+    private var isSwitchingProvider: Bool = false
+
+    private func installInitialSession() {
+        Task { await switchProvider(to: .claude) }
+    }
+
+    func switchProvider(to provider: AgentProvider) async {
+        guard !isSwitchingProvider else { return }
+        isSwitchingProvider = true
+        defer { isSwitchingProvider = false }
+
+        // Tear down current session, if any.
+        await currentSession?.terminate()
+
+        let persona = (try? PersonaPromptBuilder.load()) ?? ""
+        let newSession: any AgentSession
+        switch provider {
+        case .claude:
+            newSession = ClaudeCLIAdapter(personaPrompt: persona)
+        case .foundationModels:
+            if #available(macOS 26.0, *) {
+                newSession = FoundationModelsAdapter(personaPrompt: persona)
+            } else {
+                popover.viewModel.appendSystem(AgentProvider.foundationModels.installInstructions)
+                return
             }
         }
+        activeProvider = provider
+        currentSession = newSession
+        popover.viewModel.attach(newSession)
+        try? await newSession.start()
     }
 
     // MARK: - Onboarding bubble
