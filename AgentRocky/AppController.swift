@@ -1,5 +1,6 @@
 import AppKit
 import QuartzCore
+import SwiftUI
 
 /// Top-level coordinator. Wires together overlay, popover, and (in M3+) agent layers.
 @MainActor
@@ -34,7 +35,8 @@ final class AppController {
 
         installPopoverWiring()
         installMouseMonitor()
-        installMockSession()
+        installRealSession()
+        installOnboardingIfNeeded()
 
         tickDriver.start { [weak self] now in self?.tick(now: now) }
     }
@@ -100,10 +102,60 @@ final class AppController {
         }
     }
 
-    private func installMockSession() {
-        let session = MockAgentSession()
-        popover.viewModel.attach(session)
-        Task { try? await session.start() }
+    private func installRealSession() {
+        Task { @MainActor in
+            do {
+                let persona = try PersonaPromptBuilder.load()
+                let adapter = ClaudeCLIAdapter(personaPrompt: persona)
+                self.popover.viewModel.attach(adapter)
+                try await adapter.start()
+            } catch {
+                self.popover.viewModel.appendSystem("Setup failed: \(error)")
+            }
+        }
+    }
+
+    // MARK: - Onboarding bubble
+
+    private static let onboardingKey = "hasCompletedOnboarding"
+    private var onboardingBubble: NSPanel?
+
+    private func installOnboardingIfNeeded() {
+        guard !UserDefaults.standard.bool(forKey: Self.onboardingKey) else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            self?.showOnboardingBubble()
+        }
+    }
+
+    private func showOnboardingBubble() {
+        guard let win = overlayWindow, onboardingBubble == nil else { return }
+        let bubble = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 140, height: 36),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered, defer: false
+        )
+        bubble.isOpaque = false
+        bubble.backgroundColor = .clear
+        bubble.hasShadow = true
+        bubble.level = win.level
+        bubble.collectionBehavior = [.moveToActiveSpace, .stationary]
+        bubble.ignoresMouseEvents = true
+
+        let host = NSHostingController(rootView: OnboardingBubbleView())
+        bubble.contentViewController = host
+
+        let centerX = win.frame.midX
+        let topY = win.frame.maxY + 8
+        bubble.setFrameOrigin(NSPoint(x: centerX - 70, y: topY))
+        bubble.orderFrontRegardless()
+        onboardingBubble = bubble
+    }
+
+    private func dismissOnboardingBubbleIfShowing() {
+        guard onboardingBubble != nil else { return }
+        onboardingBubble?.orderOut(nil)
+        onboardingBubble = nil
+        UserDefaults.standard.set(true, forKey: Self.onboardingKey)
     }
 
     // MARK: - Click-through
@@ -168,6 +220,7 @@ final class AppController {
 
     private func handleOverlayClick() -> Bool {
         guard let win = overlayWindow else { return false }
+        dismissOnboardingBubbleIfShowing()
         let rockyCenterX = win.frame.midX
         let rockyTopY = win.frame.maxY
         if popover.isVisible {

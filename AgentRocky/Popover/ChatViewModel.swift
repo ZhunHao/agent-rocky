@@ -13,6 +13,11 @@ final class ChatViewModel {
     private(set) var inputDisabled: Bool = false
     var inputText: String = ""
 
+    /// Append a message from outside the view model (e.g. setup-time errors).
+    func appendSystem(_ text: String, role: AgentMessage.Role = .error) {
+        transcript.append(.init(role: role, text: text))
+    }
+
     private var session: (any AgentSession)?
     private var consumeTask: Task<Void, Never>?
     private var inProgressAssistantID: AgentMessage.ID?
@@ -37,7 +42,12 @@ final class ChatViewModel {
         switch dispatcher.interpret(raw) {
         case .command(.clear):
             transcript = []
-            // M3 will forward an actual /clear to the adapter
+            inProgressAssistantID = nil
+            // Forward a real /clear to Claude so its conversation context resets too.
+            // The adapter sends it as a normal user message; Claude Code recognizes it.
+            if let session {
+                Task { try? await session.send("/clear") }
+            }
         case .command(.copy):
             if let last = transcript.last(where: { $0.role == .assistant }) {
                 NSPasteboard.general.clearContents()
