@@ -27,6 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller?.shutdown()
     }
 
+    private var providerMenuItems: [NSMenuItem] = []
+
     private func setupMenuBar() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(
@@ -35,6 +37,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let menu = NSMenu()
+
+        // Provider submenu — Claude active in M3, FoundationModels enabled in M4.
+        let providerItem = NSMenuItem(title: "Provider", action: nil, keyEquivalent: "")
+        let providerMenu = NSMenu()
+        providerMenuItems = []
+        for (i, provider) in AgentProvider.allCases.enumerated() {
+            let entry = NSMenuItem(
+                title: provider.displayName,
+                action: #selector(switchProvider(_:)),
+                keyEquivalent: ""
+            )
+            entry.target = self
+            entry.tag = i
+            entry.state = (provider == .claude) ? .on : .off
+            entry.isEnabled = false                // re-enabled by async availability probe
+            providerMenuItems.append(entry)
+            providerMenu.addItem(entry)
+        }
+        providerItem.submenu = providerMenu
+        menu.addItem(providerItem)
+
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(
             title: "Quit AgentRocky",
@@ -44,5 +67,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.menu = menu
 
         statusItem = item
+
+        Task { @MainActor in await self.refreshProviderMenu() }
+    }
+
+    @MainActor
+    private func refreshProviderMenu() async {
+        let detector = ProviderDetector()
+        let availability = await detector.detectAvailable()
+        for (i, provider) in AgentProvider.allCases.enumerated() {
+            providerMenuItems[i].isEnabled = availability[provider, default: false]
+            if availability[provider, default: false] == false {
+                providerMenuItems[i].toolTip = provider.installInstructions
+            }
+        }
+    }
+
+    @objc private func switchProvider(_ sender: NSMenuItem) {
+        // M3: Claude is the only enabled option. M4 wires actual switching to FM.
+        sender.menu?.items.forEach { $0.state = .off }
+        sender.state = .on
     }
 }
