@@ -1,0 +1,20 @@
+{
+  "post_id": "DW1hDbnNs3z",
+  "url": "https://www.instagram.com/p/DW1hDbnNs3z/",
+  "type": "video",
+  "username": "meshtimes",
+  "caption": "here’s a tutorial on how i customized an AI agent on my dock 🐕\n\nthis is built on an open source project (huge shoutout to ryan (ryanstephen/lil-agents) I then customized the character to make it my own\n\n🩵 prepping the assets:\n\n- drew a few frames of the dog (like a mini flipbook)\n- exported ~5 pngs with no background\n- asked claude to stitch them into a transparent video\n- format matters → .mov (HEVC with alpha)\n\n🩵 then the setup:\n\n - download the lil-agents repo from ryanstephan (zip)\n - open the project in xcode\n - find the original .mov file → right click → show in finder\n - replace it with your own video\n - hit run\n - pick your AI provider (codex, claude, copilot, gemini)\n\ncomment “love” and I’ll send you the files to your inbox!",
+  "hashtags": [],
+  "likes": -1,
+  "comments": 130,
+  "timestamp": "2026-04-07T15:54:50+00:00",
+  "media": [
+    {
+      "filename": "DW1hDbnNs3z.mp4",
+      "type": "video",
+      "size_bytes": 1802581,
+      "duration_seconds": 33.552
+    }
+  ],
+  "downloaded_at": "2026-04-29T23:10:32.955836+08:00"
+}
