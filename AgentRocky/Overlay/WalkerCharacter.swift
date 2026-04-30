@@ -17,7 +17,15 @@ final class WalkerCharacter {
     var goingRight: Bool = true
     var isPaused: Bool = true
     var isWalking: Bool = false
-    var isFrozen: Bool = false                  // popover open
+    /// Multi-source freeze: hover, popover open, etc. Walker is paused whenever any source is active.
+    private var freezeReasons: Set<FreezeReason> = []
+    private var freezeStartedAt: CFTimeInterval?
+
+    var isFrozen: Bool { !freezeReasons.isEmpty }
+
+    enum FreezeReason: Hashable, Sendable {
+        case hover, popover
+    }
 
     /// Wall-time when the current walk started; 0 while paused.
     private(set) var walkStartTime: CFTimeInterval = 0
@@ -52,6 +60,35 @@ final class WalkerCharacter {
 
     /// Per-cycle reference width — used to decouple walk amount from current screen width.
     var referencePixelWidth: Double = 500.0
+
+    // MARK: - Freeze API
+
+    /// Add a freeze source. Walker paused while any source is active.
+    func addFreeze(_ reason: FreezeReason, now: CFTimeInterval) {
+        let wasFrozen = isFrozen
+        freezeReasons.insert(reason)
+        if !wasFrozen, isFrozen {
+            freezeStartedAt = now
+        }
+    }
+
+    /// Remove a freeze source. When the last source is removed, time-based state
+    /// (walkStartTime, pauseEndTime) is shifted forward by the freeze duration so
+    /// the walk resumes seamlessly without "teleporting" forward in the cycle.
+    func removeFreeze(_ reason: FreezeReason, now: CFTimeInterval) {
+        let wasFrozen = isFrozen
+        freezeReasons.remove(reason)
+        if wasFrozen, !isFrozen, let started = freezeStartedAt {
+            let frozenDuration = now - started
+            walkStartTime += frozenDuration
+            pauseEndTime += frozenDuration
+            freezeStartedAt = nil
+        }
+    }
+
+    /// Are we paused for hover/popover purposes? (Distinct from `isPaused`, which
+    /// means "between walk cycles".)
+    var isFrozenForUser: Bool { isFrozen }
 
     // MARK: - Tick
 

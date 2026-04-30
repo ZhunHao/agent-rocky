@@ -14,9 +14,15 @@ struct TerminalView: View {
             Divider().background(theme.foreground.opacity(0.1))
             input
         }
-        .background(theme.background)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(theme.background)
+                .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .foregroundStyle(theme.foreground)
         .frame(minWidth: 320, idealWidth: 360, minHeight: 360, idealHeight: 480)
+        .onExitCommand { onClose() }     // Esc closes the popover
     }
 
     private var header: some View {
@@ -117,6 +123,11 @@ struct TerminalView: View {
                 .font(theme.monoFont)
                 .onSubmit { Task { await viewModel.submit() } }
                 .disabled(viewModel.inputDisabled)
+                // .nonactivatingPanel windows confuse SwiftUI's default cursor
+                // tracking; force the I-beam manually on hover.
+                .onHover { hovering in
+                    if hovering { NSCursor.iBeam.push() } else { NSCursor.pop() }
+                }
             if viewModel.isBusy {
                 ProgressView().scaleEffect(0.6)
             } else {

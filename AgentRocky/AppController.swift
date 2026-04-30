@@ -19,11 +19,13 @@ final class AppController {
     // Click-through hit-testing
     private var hitMaskImage: NSImage?
     private var globalMouseMonitor: Any?
-    private var localMouseMonitor: Any?
+    private var localMouseMoveMonitor: Any?
+    private var localMouseDownMonitor: Any?
 
     // State for tick-loop change detection
     private var lastShouldShow: Bool = false
     private var lastGoingRight: Bool = true
+    private var isHovering: Bool = false
 
     func start() {
         installOverlay()
@@ -40,8 +42,9 @@ final class AppController {
     func shutdown() {
         tickDriver.stop()
         screenObserver.stop()
-        if let m = globalMouseMonitor { NSEvent.removeMonitor(m); globalMouseMonitor = nil }
-        if let m = localMouseMonitor  { NSEvent.removeMonitor(m); localMouseMonitor = nil }
+        if let m = globalMouseMonitor      { NSEvent.removeMonitor(m); globalMouseMonitor = nil }
+        if let m = localMouseMoveMonitor   { NSEvent.removeMonitor(m); localMouseMoveMonitor = nil }
+        if let m = localMouseDownMonitor   { NSEvent.removeMonitor(m); localMouseDownMonitor = nil }
         popover.hide()
         overlayWindow?.orderOut(nil)
         overlayWindow = nil
@@ -83,12 +86,12 @@ final class AppController {
 
     private func installPopoverWiring() {
         popover.onShow = { [weak self] in
-            self?.walker.isFrozen = true
-            self?.overlayWindow?.pauseAtFirstFrame()
+            guard let self else { return }
+            self.walker.addFreeze(.popover, now: CACurrentMediaTime())
         }
         popover.onHide = { [weak self] in
-            self?.walker.isFrozen = false
-            self?.overlayWindow?.play()
+            guard let self else { return }
+            self.walker.removeFreeze(.popover, now: CACurrentMediaTime())
         }
         popover.onCopyLast = { [weak self] in
             guard let last = self?.popover.viewModel.transcript.last(where: { $0.role == .assistant }) else { return }
@@ -106,21 +109,30 @@ final class AppController {
     // MARK: - Click-through
 
     private func installMouseMonitor() {
-        // Track mouse movement globally to toggle ignoresMouseEvents per-pixel
-        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] event in
-            Task { @MainActor in self?.updateClickThrough() }
+        // mouseMoved fires both globally (when cursor is outside our app's windows)
+        // AND locally (when cursor is over our overlay window). Need both to handle
+        // hover-leave when cursor moves off Rocky onto another app's window.
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] _ in
+            Task { @MainActor in self?.updateHover() }
         }
-        // Also handle clicks on the overlay window (when ignoresMouseEvents == false)
-        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
+        localMouseMoveMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { [weak self] event in
+            self?.updateHover()
+            return event
+        }
+
+        // Click on Rocky → toggle popover. Only fire when the click landed in the
+        // overlay window (event.window === overlayWindow). Clicks on the popover
+        // itself or other app windows should pass through unhandled.
+        localMouseDownMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
             guard let self else { return event }
-            return self.handleLocalClick(event) ? nil : event
+            guard let overlay = self.overlayWindow, event.window === overlay else { return event }
+            return self.handleOverlayClick() ? nil : event
         }
     }
 
-    private func updateClickThrough() {
+    private func updateHover() {
         guard let win = overlayWindow, let mask = hitMaskImage, win.isVisible else { return }
         let mouseScreen = NSEvent.mouseLocation
-        // Convert to window-local coords
         let local = NSPoint(
             x: mouseScreen.x - win.frame.origin.x,
             y: mouseScreen.y - win.frame.origin.y
@@ -128,9 +140,6 @@ final class AppController {
         let inBounds = local.x >= 0 && local.y >= 0
             && local.x < win.frame.width && local.y < win.frame.height
 
-        // Map window-local to image-local. The hit mask image is the entire
-        // first frame; AVPlayerLayer scales it via .resizeAspect to the window.
-        // Approximate: scale linearly window→image space.
         let imgSize = mask.size
         guard imgSize.width > 0, imgSize.height > 0 else { return }
         let imgX = local.x * imgSize.width / win.frame.width
@@ -141,11 +150,24 @@ final class AppController {
             in: mask,
             threshold: 0.1
         )
+
+        // Click-through: cursor over Rocky → catch clicks; otherwise pass through
         win.ignoresMouseEvents = !isOverRocky
+
+        // Hover-freeze
+        if isOverRocky != isHovering {
+            isHovering = isOverRocky
+            let now = CACurrentMediaTime()
+            if isOverRocky {
+                walker.addFreeze(.hover, now: now)
+            } else {
+                walker.removeFreeze(.hover, now: now)
+            }
+        }
     }
 
-    private func handleLocalClick(_ event: NSEvent) -> Bool {
-        guard let win = overlayWindow, !win.ignoresMouseEvents else { return false }
+    private func handleOverlayClick() -> Bool {
+        guard let win = overlayWindow else { return false }
         let rockyCenterX = win.frame.midX
         let rockyTopY = win.frame.maxY
         if popover.isVisible {
@@ -179,8 +201,11 @@ final class AppController {
         let dockBounds = (x: geometry.x, width: geometry.width)
         let originX = walker.tick(now: now, dockBounds: dockBounds, displayWidth: Self.displayHeight)
 
-        let elapsed = walker.isWalking ? (now - walker.walkStartTime) : 0
-        win.syncVideoTime(toWalkElapsed: elapsed, isWalking: walker.isWalking)
+        // Sync video to walking state. When frozen (hover/popover), pause the video too —
+        // not just the position update. Otherwise legs keep moving while body is still.
+        let videoIsWalking = walker.isWalking && !walker.isFrozen
+        let elapsed = videoIsWalking ? (now - walker.walkStartTime) : 0
+        win.syncVideoTime(toWalkElapsed: elapsed, isWalking: videoIsWalking)
 
         if walker.goingRight != lastGoingRight {
             win.setFacingRight(walker.goingRight)

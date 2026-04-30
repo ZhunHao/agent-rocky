@@ -19,12 +19,36 @@ struct WalkerCharacterTests {
         walker.positionProgress = 0.5
         let xBefore = walker.tick(now: 0, dockBounds: (x: 100, width: 600), displayWidth: 96)
 
-        walker.isFrozen = true
+        walker.addFreeze(.popover, now: 0)
         let xAfter1 = walker.tick(now: 1.0, dockBounds: (x: 100, width: 600), displayWidth: 96)
         let xAfter2 = walker.tick(now: 2.0, dockBounds: (x: 100, width: 600), displayWidth: 96)
 
         #expect(xBefore == xAfter1)
         #expect(xAfter1 == xAfter2)
+    }
+
+    @Test("Multi-source freeze: hover + popover, both required to unfreeze")
+    func multi_source_freeze() {
+        let walker = WalkerCharacter()
+        walker.addFreeze(.hover, now: 0)
+        #expect(walker.isFrozen)
+        walker.addFreeze(.popover, now: 0)
+        #expect(walker.isFrozen)
+        walker.removeFreeze(.hover, now: 1)
+        #expect(walker.isFrozen)             // popover still freezing
+        walker.removeFreeze(.popover, now: 2)
+        #expect(!walker.isFrozen)
+    }
+
+    @Test("Unfreezing shifts walkStartTime and pauseEndTime by the frozen duration")
+    func freeze_shifts_time_state() {
+        let walker = WalkerCharacter()
+        let initialPauseEnd = walker.pauseEndTime          // = 1.0 from default init
+        walker.addFreeze(.hover, now: 1)
+        // 10 seconds frozen
+        walker.removeFreeze(.hover, now: 11)
+        // pauseEndTime should have shifted forward by frozen duration (10s)
+        #expect(walker.pauseEndTime == initialPauseEnd + 10)
     }
 
     @Test("Position progress stays within [0, 1]")
