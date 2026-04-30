@@ -54,6 +54,31 @@ final class CharacterOverlayWindow: NSWindow {
         queuePlayer.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
+    /// Sync video time with the WalkerCharacter walk state.
+    /// Called each tick — ensures the legs animation lines up with the body translation.
+    func syncVideoTime(toWalkElapsed elapsed: CFTimeInterval, isWalking: Bool) {
+        if isWalking {
+            if queuePlayer.timeControlStatus != .playing {
+                let cm = CMTime(seconds: max(0, elapsed), preferredTimescale: 600)
+                queuePlayer.seek(to: cm, toleranceBefore: .zero, toleranceAfter: .zero)
+                queuePlayer.play()
+            }
+        } else {
+            if queuePlayer.timeControlStatus == .playing {
+                queuePlayer.pause()
+                queuePlayer.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+            }
+        }
+    }
+
+    /// Mirror the sprite horizontally when going left (the bundled video shows the
+    /// character facing right; we flip the layer to face left).
+    func setFacingRight(_ rightFacing: Bool) {
+        playerLayer.transform = rightFacing
+            ? CATransform3DIdentity
+            : CATransform3DMakeScale(-1, 1, 1)
+    }
+
     /// Resize layer when window changes size (called on dock-pref changes).
     func updateLayerFrame() {
         playerLayer.frame = (contentView?.bounds) ?? .zero
