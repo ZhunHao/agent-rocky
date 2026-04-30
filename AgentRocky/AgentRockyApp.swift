@@ -84,8 +84,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func switchProvider(_ sender: NSMenuItem) {
-        // M3: Claude is the only enabled option. M4 wires actual switching to FM.
+        let provider = AgentProvider.allCases[sender.tag]
         sender.menu?.items.forEach { $0.state = .off }
         sender.state = .on
+        Task { await self.controller?.switchProvider(to: provider) }
     }
 }
